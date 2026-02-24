@@ -5,7 +5,7 @@ A fast, zero-config CLI that shows which dev servers are running on your machine
 ```
 $ pa
 PORT  APPLICATION                      PID
-3000  repos/my-app/apps/dashboard  90596
+3000  repos/my-app/apps/dashboard    90596
 8080  repos/api-server               12041
 5173  repos/frontend                 45302
 ```
