@@ -2,11 +2,11 @@
 // ABOUTME: Shows listening TCP ports used by development servers.
 
 mod cli;
-mod command;
 mod lsof;
+mod process;
 mod table;
 
-use std::process;
+use std::process as stdprocess;
 
 use clap::Parser;
 
@@ -16,7 +16,7 @@ use table::Row;
 fn main() {
     let cli = Cli::parse();
 
-    let output = process::Command::new("lsof")
+    let output = stdprocess::Command::new("lsof")
         .args(["-iTCP", "-sTCP:LISTEN", "-nP"])
         .output();
 
@@ -24,7 +24,7 @@ fn main() {
         Ok(out) => String::from_utf8_lossy(&out.stdout).to_string(),
         Err(e) => {
             eprintln!("Failed to run lsof: {e}");
-            process::exit(1);
+            stdprocess::exit(1);
         }
     };
 
@@ -32,13 +32,32 @@ fn main() {
     ports.retain(|p| cli.includes_port(p.port));
     ports.sort_by_key(|p| p.port);
 
+    let pids: Vec<u32> = ports.iter().map(|p| p.pid).collect();
+    let cwds = process::get_working_dirs(&pids);
+
+    let home = std::env::var("HOME").unwrap_or_default();
+
     let rows: Vec<Row> = ports
         .iter()
-        .map(|p| Row {
-            pid: p.pid,
-            port: p.port,
-            process: p.process.clone(),
-            command: command::get_command(p.pid),
+        .filter(|p| {
+            if cli.all {
+                return true;
+            }
+            cwds.get(&p.pid)
+                .map(|cwd| process::is_dev_project(cwd, &home))
+                .unwrap_or(false)
+        })
+        .map(|p| {
+            let application = cwds
+                .get(&p.pid)
+                .map(|cwd| process::application_name(cwd, &home))
+                .unwrap_or_else(|| "\u{2013}".to_string());
+            Row {
+                pid: p.pid,
+                port: p.port,
+                process: p.process.clone(),
+                command: application,
+            }
         })
         .collect();
 
