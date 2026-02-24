@@ -24,10 +24,12 @@ fn parse_range(s: &str) -> Result<(u16, u16), String> {
     if parts.len() != 2 {
         return Err("expected format: START-END (e.g. 3000-4000)".to_string());
     }
-    let start: u16 = parts[0].parse().map_err(|_| format!("invalid start port: {}", parts[0]))?;
-    let end: u16 = parts[1].parse().map_err(|_| format!("invalid end port: {}", parts[1]))?;
+    let start_str = parts[0];
+    let end_str = parts[1];
+    let start: u16 = start_str.parse().map_err(|_| format!("invalid start port: {start_str}"))?;
+    let end: u16 = end_str.parse().map_err(|_| format!("invalid end port: {end_str}"))?;
     if start > end {
-        return Err(format!("start port {} is greater than end port {}", start, end));
+        return Err(format!("start port {start} is greater than end port {end}"));
     }
     Ok((start, end))
 }
