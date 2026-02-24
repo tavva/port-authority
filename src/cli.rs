@@ -6,7 +6,7 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[command(name = "port-authority", about = "Show listening TCP ports for development servers")]
 pub struct Cli {
-    /// Show all listening ports, including system services
+    /// Skip dev-project filtering, show all listening ports
     #[arg(short, long)]
     pub all: bool,
 
@@ -44,9 +44,9 @@ impl Cli {
             return port >= start && port <= end;
         }
         if self.all {
-            return true;
+            return port >= 1024;
         }
-        port >= 1024
+        true
     }
 }
 
@@ -75,23 +75,22 @@ mod tests {
     }
 
     #[test]
-    fn includes_port_default_filters_low_ports() {
+    fn includes_port_default_includes_all() {
         let cli = Cli { all: false, port: None, range: None };
-        assert!(!cli.includes_port(22));
-        assert!(!cli.includes_port(80));
-        assert!(!cli.includes_port(443));
-        assert!(!cli.includes_port(1023));
+        assert!(cli.includes_port(22));
+        assert!(cli.includes_port(80));
         assert!(cli.includes_port(1024));
         assert!(cli.includes_port(3000));
-        assert!(cli.includes_port(8080));
         assert!(cli.includes_port(65535));
     }
 
     #[test]
-    fn includes_port_all_flag() {
+    fn includes_port_all_flag_filters_low_ports() {
         let cli = Cli { all: true, port: None, range: None };
-        assert!(cli.includes_port(22));
-        assert!(cli.includes_port(80));
+        assert!(!cli.includes_port(22));
+        assert!(!cli.includes_port(80));
+        assert!(!cli.includes_port(1023));
+        assert!(cli.includes_port(1024));
         assert!(cli.includes_port(3000));
     }
 
