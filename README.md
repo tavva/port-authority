@@ -15,18 +15,12 @@ Most developers run multiple projects and forget what's listening where. `pa` cu
 ## Install
 
 ```bash
-cargo install port-authority
-```
-
-This installs the `pa` binary to `~/.cargo/bin/`.
-
-### From source
-
-```bash
 git clone https://github.com/tavva/port-authority.git
 cd port-authority
 cargo install --path .
 ```
+
+This installs the `pa` binary to `~/.cargo/bin/`.
 
 ## Usage
 
