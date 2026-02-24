@@ -3,6 +3,7 @@
 
 mod command;
 mod lsof;
+mod table;
 
 fn main() {
     println!("port-authority");
