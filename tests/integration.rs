@@ -69,9 +69,9 @@ fn no_output_for_unused_port() {
         .output()
         .expect("Failed to run port-authority");
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(
-        stdout.is_empty() || !stdout.contains(&port.to_string()),
-        "Expected port {port} NOT in output:\n{stdout}"
+        stderr.contains("No listening ports found"),
+        "Expected 'No listening ports found' message on stderr:\n{stderr}"
     );
 }

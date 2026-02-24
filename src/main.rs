@@ -58,9 +58,11 @@ fn main() {
         })
         .collect();
 
-    let use_colour = std::io::IsTerminal::is_terminal(&std::io::stdout());
-    let table = table::format_table(&rows, use_colour);
-    if !table.is_empty() {
-        println!("{table}");
+    if rows.is_empty() {
+        eprintln!("No listening ports found.");
+        return;
     }
+
+    let use_colour = std::io::IsTerminal::is_terminal(&std::io::stdout());
+    println!("{}", table::format_table(&rows, use_colour));
 }
