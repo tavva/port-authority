@@ -53,15 +53,15 @@ fn main() {
                 .map(|cwd| process::application_name(cwd, &home))
                 .unwrap_or_else(|| "\u{2013}".to_string());
             Row {
-                pid: p.pid,
                 port: p.port,
-                process: p.process.clone(),
-                command: application,
+                application,
+                pid: p.pid,
             }
         })
         .collect();
 
-    let table = table::format_table(&rows);
+    let use_colour = std::io::IsTerminal::is_terminal(&std::io::stdout());
+    let table = table::format_table(&rows, use_colour);
     if !table.is_empty() {
         println!("{table}");
     }

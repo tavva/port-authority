@@ -1,34 +1,54 @@
 // ABOUTME: Formats port data into a column-aligned plain text table.
-// ABOUTME: Produces human-readable output for terminal display.
+// ABOUTME: Supports ANSI colour output for terminal display.
+
+const BOLD: &str = "\x1b[1m";
+const CYAN: &str = "\x1b[36m";
+const DIM: &str = "\x1b[2m";
+const RESET: &str = "\x1b[0m";
 
 pub struct Row {
-    pub pid: u32,
     pub port: u16,
-    pub process: String,
-    pub command: String,
+    pub application: String,
+    pub pid: u32,
 }
 
-pub fn format_table(rows: &[Row]) -> String {
+pub fn format_table(rows: &[Row], use_colour: bool) -> String {
     if rows.is_empty() {
         return String::new();
     }
 
-    let pid_width = rows.iter().map(|r| r.pid.to_string().len()).max().unwrap().max(3);
     let port_width = rows.iter().map(|r| r.port.to_string().len()).max().unwrap().max(4);
-    let proc_width = rows.iter().map(|r| r.process.len()).max().unwrap().max(7);
+    let app_width = rows.iter().map(|r| r.application.len()).max().unwrap().max(11);
+    let pid_width = rows.iter().map(|r| r.pid.to_string().len()).max().unwrap().max(3);
 
-    let mut output = format!(
-        "{:<pid_w$}  {:<port_w$}  {:<proc_w$}  {}\n",
-        "PID", "PORT", "PROCESS", "COMMAND",
-        pid_w = pid_width, port_w = port_width, proc_w = proc_width,
-    );
+    let mut output = if use_colour {
+        format!(
+            "{BOLD}{:<port_w$}  {:<app_w$}  {:<pid_w$}{RESET}\n",
+            "PORT", "APPLICATION", "PID",
+            port_w = port_width, app_w = app_width, pid_w = pid_width,
+        )
+    } else {
+        format!(
+            "{:<port_w$}  {:<app_w$}  {:<pid_w$}\n",
+            "PORT", "APPLICATION", "PID",
+            port_w = port_width, app_w = app_width, pid_w = pid_width,
+        )
+    };
 
     for row in rows {
-        output.push_str(&format!(
-            "{:<pid_w$}  {:<port_w$}  {:<proc_w$}  {}\n",
-            row.pid, row.port, row.process, row.command,
-            pid_w = pid_width, port_w = port_width, proc_w = proc_width,
-        ));
+        if use_colour {
+            output.push_str(&format!(
+                "{CYAN}{:<port_w$}{RESET}  {:<app_w$}  {DIM}{:<pid_w$}{RESET}\n",
+                row.port, row.application, row.pid,
+                port_w = port_width, app_w = app_width, pid_w = pid_width,
+            ));
+        } else {
+            output.push_str(&format!(
+                "{:<port_w$}  {:<app_w$}  {:<pid_w$}\n",
+                row.port, row.application, row.pid,
+                port_w = port_width, app_w = app_width, pid_w = pid_width,
+            ));
+        }
     }
 
     output.trim_end().to_string()
@@ -39,35 +59,75 @@ mod tests {
     use super::*;
 
     #[test]
-    fn formats_rows_as_aligned_table() {
+    fn formats_rows_as_aligned_table_no_colour() {
         let rows = vec![
-            Row { pid: 1234, port: 3000, process: "node".into(), command: "next dev".into() },
-            Row { pid: 56789, port: 8080, process: "python".into(), command: "uvicorn main:app".into() },
+            Row { port: 3000, application: "repos/drumbeat".into(), pid: 1234 },
+            Row { port: 8080, application: "home-networking".into(), pid: 56789 },
         ];
 
-        let table = format_table(&rows);
+        let table = format_table(&rows, false);
         let lines: Vec<&str> = table.lines().collect();
 
-        // Header present
-        assert!(lines[0].contains("PID"));
+        assert_eq!(lines.len(), 3);
         assert!(lines[0].contains("PORT"));
-        assert!(lines[0].contains("PROCESS"));
-        assert!(lines[0].contains("COMMAND"));
+        assert!(lines[0].contains("APPLICATION"));
+        assert!(lines[0].contains("PID"));
 
-        // Data rows present and aligned
-        assert!(lines[1].contains("1234"));
         assert!(lines[1].contains("3000"));
-        assert!(lines[1].contains("node"));
-        assert!(lines[1].contains("next dev"));
+        assert!(lines[1].contains("repos/drumbeat"));
+        assert!(lines[1].contains("1234"));
 
-        assert!(lines[2].contains("56789"));
         assert!(lines[2].contains("8080"));
-        assert!(lines[2].contains("python"));
-        assert!(lines[2].contains("uvicorn main:app"));
+        assert!(lines[2].contains("home-networking"));
+        assert!(lines[2].contains("56789"));
+    }
+
+    #[test]
+    fn formats_rows_with_colour() {
+        let rows = vec![
+            Row { port: 3000, application: "repos/drumbeat".into(), pid: 1234 },
+        ];
+
+        let table = format_table(&rows, true);
+
+        // Header is bold
+        assert!(table.contains(BOLD));
+        // Port is cyan
+        assert!(table.contains(CYAN));
+        // PID is dim
+        assert!(table.contains(DIM));
+        // All codes are reset
+        assert!(table.contains(RESET));
+    }
+
+    #[test]
+    fn no_colour_has_no_ansi_codes() {
+        let rows = vec![
+            Row { port: 3000, application: "repos/drumbeat".into(), pid: 1234 },
+        ];
+
+        let table = format_table(&rows, false);
+        assert!(!table.contains('\x1b'));
+    }
+
+    #[test]
+    fn column_order_is_port_application_pid() {
+        let rows = vec![
+            Row { port: 3000, application: "myapp".into(), pid: 999 },
+        ];
+
+        let table = format_table(&rows, false);
+        let header = table.lines().next().unwrap();
+        let port_pos = header.find("PORT").unwrap();
+        let app_pos = header.find("APPLICATION").unwrap();
+        let pid_pos = header.find("PID").unwrap();
+        assert!(port_pos < app_pos);
+        assert!(app_pos < pid_pos);
     }
 
     #[test]
     fn empty_rows_returns_empty_string() {
-        assert_eq!(format_table(&[]), "");
+        assert_eq!(format_table(&[], false), "");
+        assert_eq!(format_table(&[], true), "");
     }
 }
