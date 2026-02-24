@@ -9,7 +9,7 @@ fn finds_a_listening_port() {
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind port");
     let port = listener.local_addr().unwrap().port();
 
-    let output = Command::new(env!("CARGO_BIN_EXE_port-authority"))
+    let output = Command::new(env!("CARGO_BIN_EXE_pa"))
         .args(["--port", &port.to_string()])
         .output()
         .expect("Failed to run port-authority");
@@ -26,7 +26,7 @@ fn output_has_correct_columns() {
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind port");
     let port = listener.local_addr().unwrap().port();
 
-    let output = Command::new(env!("CARGO_BIN_EXE_port-authority"))
+    let output = Command::new(env!("CARGO_BIN_EXE_pa"))
         .args(["--port", &port.to_string()])
         .output()
         .expect("Failed to run port-authority");
@@ -43,7 +43,7 @@ fn piped_output_has_no_ansi_codes() {
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind port");
     let port = listener.local_addr().unwrap().port();
 
-    let output = Command::new(env!("CARGO_BIN_EXE_port-authority"))
+    let output = Command::new(env!("CARGO_BIN_EXE_pa"))
         .args(["--port", &port.to_string()])
         .output()
         .expect("Failed to run port-authority");
@@ -64,7 +64,7 @@ fn no_output_for_unused_port() {
     };
     // listener dropped, port is free
 
-    let output = Command::new(env!("CARGO_BIN_EXE_port-authority"))
+    let output = Command::new(env!("CARGO_BIN_EXE_pa"))
         .args(["--port", &port.to_string()])
         .output()
         .expect("Failed to run port-authority");
