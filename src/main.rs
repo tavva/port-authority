@@ -6,8 +6,6 @@ mod lsof;
 mod process;
 mod table;
 
-use std::process as stdprocess;
-
 use clap::Parser;
 
 use cli::Cli;
@@ -16,7 +14,7 @@ use table::Row;
 fn main() {
     let cli = Cli::parse();
 
-    let output = stdprocess::Command::new("lsof")
+    let output = std::process::Command::new("lsof")
         .args(["-iTCP", "-sTCP:LISTEN", "-nP"])
         .output();
 
@@ -24,7 +22,7 @@ fn main() {
         Ok(out) => String::from_utf8_lossy(&out.stdout).to_string(),
         Err(e) => {
             eprintln!("Failed to run lsof: {e}");
-            stdprocess::exit(1);
+            std::process::exit(1);
         }
     };
 
